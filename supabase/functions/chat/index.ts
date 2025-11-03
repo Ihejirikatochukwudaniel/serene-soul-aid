@@ -10,20 +10,20 @@ serve(async (req) => {
 
   try {
     const { messages } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const QWEN_API_KEY = Deno.env.get("QWEN_API_KEY");
+    if (!QWEN_API_KEY) throw new Error("QWEN_API_KEY is not configured");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${QWEN_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "qwen-turbo",
         messages: [
-          { 
-            role: "system", 
+          {
+            role: "system",
             content: `You are MindAid, a compassionate and empathetic AI mental health assistant. Your role is to:
 - Listen with empathy and without judgment
 - Provide emotional support and encouragement
@@ -35,7 +35,7 @@ serve(async (req) => {
 - Never diagnose conditions or prescribe medications
 - Always prioritize user safety and wellbeing
 
-Remember: You are here to support, not to replace professional mental health care.` 
+Remember: You are here to support, not to replace professional mental health care.`
           },
           ...messages,
         ],
@@ -50,15 +50,15 @@ Remember: You are here to support, not to replace professional mental health car
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required, please add funds to your workspace." }), {
-          status: 402,
+      if (response.status === 401) {
+        return new Response(JSON.stringify({ error: "Invalid API key. Please check your Qwen API key." }), {
+          status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
+      console.error("Qwen API error:", response.status, errorText);
+      return new Response(JSON.stringify({ error: "Qwen API error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
