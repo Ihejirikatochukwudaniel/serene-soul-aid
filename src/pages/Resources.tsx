@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+const MAX_SEARCH_LENGTH = 100;
+
 interface Resource {
   id: string;
   title: string;
@@ -89,9 +91,15 @@ export default function Resources() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= MAX_SEARCH_LENGTH) {
+                  setSearchQuery(value);
+                }
+              }}
               placeholder="Search articles, videos..."
               className="pl-9 glass"
+              maxLength={MAX_SEARCH_LENGTH}
             />
           </div>
 

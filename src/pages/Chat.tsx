@@ -8,6 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSessionId } from "@/lib/session";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { z } from "zod";
+
+const messageSchema = z.object({
+  content: z.string()
+    .trim()
+    .min(1, "Message cannot be empty")
+    .max(2000, "Message is too long (max 2000 characters)"),
+});
 
 interface Message {
   id: string;
@@ -62,6 +70,17 @@ export default function Chat() {
 
   async function sendMessage() {
     if (!input.trim() || isLoading) return;
+
+    // Validate input
+    const validation = messageSchema.safeParse({ content: input });
+    if (!validation.success) {
+      toast({
+        title: "Invalid message",
+        description: validation.error.errors[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: `temp_${Date.now()}`,

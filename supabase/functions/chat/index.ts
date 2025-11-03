@@ -10,17 +10,56 @@ serve(async (req) => {
 
   try {
     const { messages } = await req.json();
-    const QWEN_API_KEY = Deno.env.get("QWEN_API_KEY");
-    if (!QWEN_API_KEY) throw new Error("QWEN_API_KEY is not configured");
 
-    const response = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
+    // Input validation
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request: messages must be an array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request: messages array cannot be empty" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (messages.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Too many messages: maximum 50 messages allowed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate each message
+    for (const msg of messages) {
+      if (!msg.content || typeof msg.content !== 'string') {
+        return new Response(
+          JSON.stringify({ error: "Invalid message format: content is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (msg.content.length > 2000) {
+        return new Response(
+          JSON.stringify({ error: "Message too long: maximum 2000 characters per message" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${QWEN_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "qwen-turbo",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
@@ -51,14 +90,14 @@ Remember: You are here to support, not to replace professional mental health car
         });
       }
       if (response.status === 401) {
-        return new Response(JSON.stringify({ error: "Invalid API key. Please check your Qwen API key." }), {
+        return new Response(JSON.stringify({ error: "API authentication failed" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errorText = await response.text();
-      console.error("Qwen API error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Qwen API error" }), {
+      console.error("AI API error:", response.status, errorText);
+      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

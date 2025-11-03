@@ -8,6 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSessionId } from "@/lib/session";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay } from "date-fns";
+import { z } from "zod";
+
+const moodSchema = z.object({
+  mood_value: z.number().int().min(1).max(5),
+  note: z.string().max(500, "Note is too long (max 500 characters)").optional(),
+});
 
 const MOODS = [
   { value: 1, emoji: "😢", label: "Very Sad" },
@@ -74,6 +80,20 @@ export default function Mood() {
 
   async function saveMood() {
     if (!selectedMood) return;
+
+    // Validate input
+    const validation = moodSchema.safeParse({ 
+      mood_value: selectedMood, 
+      note: note.trim() || undefined 
+    });
+    if (!validation.success) {
+      toast({
+        title: "Invalid input",
+        description: validation.error.errors[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
 
     const { error } = await supabase.from("mood_entries").insert({
       session_id: sessionId,

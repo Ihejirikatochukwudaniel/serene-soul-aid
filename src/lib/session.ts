@@ -3,7 +3,8 @@ export function getSessionId(): string {
   let sessionId = localStorage.getItem('mindaid_session_id');
   
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Use cryptographically secure random UUID for session IDs
+    sessionId = crypto.randomUUID();
     localStorage.setItem('mindaid_session_id', sessionId);
   }
   
