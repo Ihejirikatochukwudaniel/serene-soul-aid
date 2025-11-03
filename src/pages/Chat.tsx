@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getSessionId } from "@/lib/session";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { z } from "zod";
@@ -29,7 +28,6 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const sessionId = getSessionId();
 
   useEffect(() => {
     loadChatHistory();
@@ -40,10 +38,13 @@ export default function Chat() {
   }, [messages]);
 
   async function loadChatHistory() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from("chat_messages")
       .select("*")
-      .eq("session_id", sessionId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -62,7 +63,7 @@ export default function Chat() {
       const welcomeMsg: Message = {
         id: "welcome",
         role: "assistant",
-        content: "Hello! I'm your MindAid assistant. How are you feeling today? Remember, our chat is anonymous and secure."
+        content: "Hello! I'm your MindAid assistant. How are you feeling today?"
       };
       setMessages([welcomeMsg]);
     }
@@ -88,15 +89,26 @@ export default function Chat() {
       content: input.trim()
     };
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to send messages",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     // Save user message
     await supabase.from("chat_messages").insert({
-      session_id: sessionId,
+      user_id: user.id,
       role: "user",
-      content: userMessage.content
+      content: userMessage.content,
+      session_id: "" // Temporary until types regenerate
     });
 
     try {
@@ -171,9 +183,10 @@ export default function Chat() {
       // Save assistant message
       if (assistantContent) {
         await supabase.from("chat_messages").insert({
-          session_id: sessionId,
+          user_id: user.id,
           role: "assistant",
-          content: assistantContent
+          content: assistantContent,
+          session_id: "" // Temporary until types regenerate
         });
       }
     } catch (error) {

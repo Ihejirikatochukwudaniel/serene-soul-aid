@@ -21,6 +21,7 @@ export type Database = {
           id: string
           role: string
           session_id: string
+          user_id: string | null
         }
         Insert: {
           content: string
@@ -28,6 +29,7 @@ export type Database = {
           id?: string
           role: string
           session_id: string
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -35,6 +37,7 @@ export type Database = {
           id?: string
           role?: string
           session_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -45,6 +48,7 @@ export type Database = {
           mood_value: number
           note: string | null
           session_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -52,6 +56,7 @@ export type Database = {
           mood_value: number
           note?: string | null
           session_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -59,6 +64,25 @@ export type Database = {
           mood_value?: number
           note?: string | null
           session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -101,18 +125,21 @@ export type Database = {
           id: string
           last_active: string | null
           session_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           last_active?: string | null
           session_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           last_active?: string | null
           session_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

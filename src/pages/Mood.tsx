@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { getSessionId } from "@/lib/session";
 import { useToast } from "@/hooks/use-toast";
 import { format, subDays, startOfDay } from "date-fns";
 import { z } from "zod";
@@ -36,17 +35,19 @@ export default function Mood() {
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [weekData, setWeekData] = useState<number[]>([]);
   const { toast } = useToast();
-  const sessionId = getSessionId();
 
   useEffect(() => {
     loadMoodEntries();
   }, []);
 
   async function loadMoodEntries() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from("mood_entries")
       .select("*")
-      .eq("session_id", sessionId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10);
 
@@ -95,10 +96,21 @@ export default function Mood() {
       return;
     }
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to log your mood",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const { error } = await supabase.from("mood_entries").insert({
-      session_id: sessionId,
+      user_id: user.id,
       mood_value: selectedMood,
       note: note.trim() || null,
+      session_id: "" // Temporary until types regenerate
     });
 
     if (error) {
